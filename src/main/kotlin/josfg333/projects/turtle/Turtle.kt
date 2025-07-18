@@ -2,10 +2,7 @@ package josfg333.projects.turtle
 
 import javafx.scene.paint.Color
 import java.util.Queue
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.max
-import kotlin.math.sin
+import kotlin.math.*
 
 
 fun radians(degrees: Double) = PI * degrees / 180.0
@@ -29,7 +26,9 @@ enum class TurtleInstructionType {
     IS_DOWN,
     PEN_COLOR,
     FILL_COLOR,
-    SPEED
+    SPEED,
+    BEGIN_FILL,
+    END_FILL
 }
 
 class TurtleInstruction(
@@ -41,15 +40,16 @@ class TurtleInstruction(
 )
 
 data class TurtleState(
-    var x:Double = 0.0,
-    var y:Double = 0.0,
+    var pos: Vec2 = Vec2(0.0, 0.0),
     var heading: Double = 0.0,
     var size: Double = 1.0,
     var penColor: Color = Color.BLACK,
     var fillColor: Color = Color.WHITE,
     var isDown:Boolean = true,
     var isVisible:Boolean = true,
-    var speed:Double = SPEED_SCALE
+    var speed:Double = TURTLE_SPEED_SCALE,
+    var isFilling: Boolean = false,
+    val fillPoints: MutableList<Vec2> = mutableListOf()
 )
 
 
@@ -58,11 +58,9 @@ class Turtle(public val screen: TurtleScreen) {
 
     private val state = TurtleState()
 
-    private val id: Int
     private val instructionQueue: Queue<TurtleInstruction>
     init {
-        val (id, instructionQueue) = screen.addTurtle(this, state.copy())
-        this.id = id
+        val instructionQueue = screen.addTurtle(this, state.copy())
         this.instructionQueue = instructionQueue
     }
 
@@ -70,10 +68,12 @@ class Turtle(public val screen: TurtleScreen) {
 
 
 
-    public var x get() = state.x
+    public var x get() = state.pos.x
         set(value) = moveTo(value, y)
-    public var y get() = state.y
+    public var y get() = state.pos.y
         set(value) = moveTo(x, value)
+    public var pos get() = state.pos
+        set(value) = moveTo(value)
 
     public var heading
         get() = state.heading
@@ -114,13 +114,30 @@ class Turtle(public val screen: TurtleScreen) {
             state.isVisible = value
         }
     public var speed
-        get() = state.speed / SPEED_SCALE
+        get() = state.speed
         set(value) {
-            val value = if (value<=0.0) Double.POSITIVE_INFINITY else  value*SPEED_SCALE
+            val value = if (value<=0.0) Double.POSITIVE_INFINITY else  value
             instructionQueue.add(TurtleInstruction(type=TurtleInstructionType.SPEED, d0=value))
             state.speed = value
         }
+    public var isFilling
+        get() = state.isFilling
+        set(value) {
+            if ((!state.isFilling) && value) {
+                instructionQueue.add(TurtleInstruction(type=TurtleInstructionType.BEGIN_FILL))
+                state.isFilling = true
+            } else if (state.isFilling && (!value)) {
+                instructionQueue.add(TurtleInstruction(type=TurtleInstructionType.END_FILL))
+                state.isFilling = false
+            }
 
+        }
+
+    public fun heading(degrees: Double){heading=degrees}
+    public fun size(value: Double){size=value}
+    public fun penColor(value: Color){penColor=value}
+    public fun fillColor(value: Color){fillColor=value}
+    public fun speed(value: Double){speed=value}
 
     public fun down(){isDown = true}
     public fun up(){isDown = false}
@@ -128,11 +145,14 @@ class Turtle(public val screen: TurtleScreen) {
     public fun show(){isVisible = true}
     public fun hide(){isVisible = false}
 
+    public fun beginFill(){isFilling = true}
+    public fun endFill(){isFilling = false}
+
     public fun moveTo(x: Double, y:Double) {
         instructionQueue.add(TurtleInstruction(TurtleInstructionType.MOVE_TO, d0=x, d1=y))
-        state.x = x
-        state.y = y
+        state.pos = Vec2(x, y)
     }
+    public fun moveTo(pos: Vec2) = moveTo(pos.x, pos.y)
 
     public fun forward(distance: Double) {
         val rad = radians(heading)
