@@ -44,7 +44,7 @@ data class TurtleState(
     var heading: Double = 0.0,
     var size: Double = 1.0,
     var penColor: Color = Color.BLACK,
-    var fillColor: Color = Color.WHITE,
+    var fillColor: Color = Color.GRAY,
     var isDown:Boolean = true,
     var isVisible:Boolean = true,
     var speed:Double = TURTLE_SPEED_SCALE,

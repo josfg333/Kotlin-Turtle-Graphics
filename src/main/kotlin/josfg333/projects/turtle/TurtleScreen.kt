@@ -66,6 +66,10 @@ class TurtleScreen(width: Double=500.0, height: Double=500.0): StackPane() {
         timer.start()
     }
 
+    public fun clear() {
+        this.mainCanvas.graphicsContext2D.clearRect(this.width/2, this.height/2, this.width, this.height)
+    }
+
 
     private val turtleData: MutableList<TurtleDatum> = mutableListOf()
 
